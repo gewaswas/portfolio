@@ -1,0 +1,11 @@
+node_modules/
+dist/
+data/
+uploads/
+reference/
+test-results/
+playwright-report/
+public/
+package-lock.json
+.env
+.env.*
