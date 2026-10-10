@@ -92,6 +92,7 @@ function Software({ item, index, enabled }) {
   const [ref, visible] = useVisible();
   const [showIcon, setShowIcon] = useState(false);
   useEffect(() => {
+    setShowIcon(false);
     if (!enabled || !visible || !item.icon) return;
     const timer = setInterval(() => setShowIcon((value) => !value), 3500);
     return () => clearInterval(timer);

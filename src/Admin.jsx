@@ -128,6 +128,10 @@ export function Admin() {
     [assets, setAssets] = useState([]);
   const [tab, setTab] = useState('Profile'),
     [preview, setPreview] = useState(false);
+  const latestDraft = useRef(draft);
+  useEffect(() => {
+    latestDraft.current = draft;
+  }, [draft]);
   const dirty = !!record && JSON.stringify(record.content) !== JSON.stringify(draft);
   const load = async () => {
     const [content, assetList] = await Promise.all([api('/content'), api('/assets')]);
@@ -207,6 +211,7 @@ export function Admin() {
   const save = async () => {
     setError('');
     if (!validate()) return;
+    const submittedDraft = draft;
     setBusy(true);
     try {
       const next = await api('/content', {
@@ -214,8 +219,12 @@ export function Admin() {
         body: JSON.stringify({ content: draft, revision: record.revision }),
       });
       setRecord(next);
-      setDraft(next.content);
-      setNotice('Changes saved. Your portfolio is up to date.');
+      setDraft((current) => (current === submittedDraft ? next.content : current));
+      setNotice(
+        latestDraft.current === submittedDraft
+          ? 'Changes saved. Your portfolio is up to date.'
+          : 'Changes saved. Your newer edits are still unsaved.',
+      );
     } catch (e) {
       fail(e);
     } finally {
@@ -381,7 +390,9 @@ export function Admin() {
               Import backup ↑
               <input type="file" accept="application/json,.json" onChange={importBackup} />
             </label>
-            <button onClick={logout}>Sign out</button>
+            <button onClick={logout} disabled={busy}>
+              Sign out
+            </button>
             <small>
               {session.storage === 'mongodb' ? 'Connected to MongoDB' : 'Local development storage'}
             </small>

@@ -1,6 +1,32 @@
 import { test, expect } from '@playwright/test';
 import { testSettings } from './settings.js';
 const origin = { Origin: testSettings.baseURL };
+test('invalid portfolio JSON shows a recoverable error', async ({ page }) => {
+  const errors = [];
+  page.on('pageerror', (error) => errors.push(error.message));
+  await page.route('**/api/content', (route) =>
+    route.fulfill({ json: { content: {}, revision: 1 } }),
+  );
+  await page.goto('/');
+  await expect(page.getByRole('heading', { name: 'Portfolio unavailable' })).toBeVisible();
+  await expect(
+    page.getByText('The server returned an invalid response. Please try again.'),
+  ).toBeVisible();
+  expect(errors).toEqual([]);
+  await page.unroute('**/api/content');
+  await page.getByRole('button', { name: 'Try again' }).click();
+  await expect(page.getByRole('heading', { name: 'KYLE BRYAN DAVID' })).toBeVisible();
+});
+
+test('null JSON error responses show a useful message', async ({ page }) => {
+  await page.route('**/api/content', (route) =>
+    route.fulfill({ status: 503, contentType: 'application/json', body: 'null' }),
+  );
+  await page.goto('/');
+  await expect(page.getByRole('heading', { name: 'Portfolio unavailable' })).toBeVisible();
+  await expect(page.getByText('Request failed. Please try again.')).toBeVisible();
+});
+
 test('invalid server responses show a recoverable error instead of crashing', async ({ page }) => {
   await page.route('**/api/content', (route) =>
     route.fulfill({ status: 200, contentType: 'text/html', body: '<html>Unavailable</html>' }),
@@ -31,6 +57,82 @@ async function signIn(request) {
   });
   expect(result.ok()).toBeTruthy();
 }
+
+test('edits made during a delayed save remain in the draft', async ({ page, request }) => {
+  const original = await (await request.get('/api/content')).json();
+  await page.goto('/admin');
+  await page.getByLabel('Admin password').fill(testSettings.adminPassword);
+  await page.getByRole('button', { name: /Sign in/ }).click();
+  await expect(page.getByLabel('Greeting', { exact: true })).toBeVisible();
+  let release;
+  const gate = new Promise((resolve) => {
+    release = resolve;
+  });
+  let saved;
+  const received = new Promise((resolve) => {
+    saved = resolve;
+  });
+  await page.route('**/api/content', async (route) => {
+    if (route.request().method() !== 'PUT') return route.continue();
+    const response = await route.fetch();
+    saved();
+    await gate;
+    await route.fulfill({ response });
+  });
+  try {
+    await page.getByLabel('Greeting', { exact: true }).fill('Submitted greeting');
+    await page.getByRole('button', { name: 'Save changes', exact: true }).click();
+    await received;
+    await page.getByLabel('Greeting', { exact: true }).fill('Newer unsaved greeting');
+    release();
+    await expect(page.getByRole('status')).toHaveText(
+      'Changes saved. Your newer edits are still unsaved.',
+    );
+    await expect(page.getByLabel('Greeting', { exact: true })).toHaveValue(
+      'Newer unsaved greeting',
+    );
+    await expect(page.getByRole('button', { name: 'Save changes', exact: true })).toBeEnabled();
+    expect((await (await request.get('/api/content')).json()).content.greeting).toBe(
+      'Submitted greeting',
+    );
+    await page.unroute('**/api/content');
+    await page.getByRole('button', { name: 'Save changes', exact: true }).click();
+    await expect(page.getByRole('status')).toHaveText(
+      'Changes saved. Your portfolio is up to date.',
+    );
+    expect((await (await request.get('/api/content')).json()).content.greeting).toBe(
+      'Newer unsaved greeting',
+    );
+  } finally {
+    release();
+    await signIn(request);
+    const current = await (await request.get('/api/content')).json();
+    expect(
+      (
+        await request.put('/api/content', {
+          headers: origin,
+          data: { content: original.content, revision: current.revision },
+        })
+      ).ok(),
+    ).toBeTruthy();
+    page.on('dialog', (dialog) => dialog.accept());
+  }
+});
+
+test('changing to reduced motion restores the software screenshot', async ({ page, request }) => {
+  const record = await (await request.get('/api/content')).json();
+  record.content.software[0].image = '/pawfolio.png';
+  record.content.software[0].icon = '/aws.png';
+  await page.route('**/api/content', (route) => route.fulfill({ json: record }));
+  await page.goto('/');
+  const visual = page.locator('.software-visual').first();
+  await visual.scrollIntoViewIfNeeded();
+  await expect(visual).toHaveClass(/show-icon/, { timeout: 7000 });
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await expect(visual).not.toHaveClass(/show-icon/);
+  await expect(visual.locator('.software-shot')).toHaveCSS('opacity', '1');
+});
+
 test('public content and project interaction render without runtime errors', async ({ page }) => {
   const errors = [];
   page.on('pageerror', (e) => errors.push(e.message));
