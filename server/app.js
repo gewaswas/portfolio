@@ -16,10 +16,13 @@ import { MongoLoginLimitStore } from './login-limits.js';
 const app = express();
 const production = onVercel || process.env.NODE_ENV === 'production';
 const password = process.env.ADMIN_PASSWORD;
-if (!password || password.length < 12 || password.length > 200)
-  throw new Error(
-    'Set an ADMIN_PASSWORD with at least 12 characters in .env. Run npm run setup first.',
+if (!password || password.length < 12 || password.length > 200) {
+  const error = new Error(
+    'Set ADMIN_PASSWORD to a private password of 12–200 characters and redeploy.',
   );
+  error.code = 'ADMIN_PASSWORD_INVALID';
+  throw error;
+}
 const salt = randomBytes(16);
 const passwordHash = scryptSync(password, salt, 64);
 const cookieOptions = {

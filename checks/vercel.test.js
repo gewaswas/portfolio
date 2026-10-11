@@ -13,7 +13,7 @@ const png = Buffer.from(
   'base64',
 );
 
-async function startInstance(uri) {
+async function startInstance(uri, overrides = {}) {
   const child = spawn(process.execPath, ['scripts/test-vercel-server.js'], {
     env: {
       ...process.env,
@@ -28,6 +28,7 @@ async function startInstance(uri) {
       VERCEL_URL: 'portfolio-test.vercel.app',
       VERCEL_PROJECT_PRODUCTION_URL: '',
       VERCEL_BRANCH_URL: '',
+      ...overrides,
     },
     stdio: ['ignore', 'pipe', 'pipe'],
   });
@@ -48,6 +49,25 @@ async function startInstance(uri) {
   });
   return { child, exited, url: await ready };
 }
+
+test('invalid admin passwords return a useful JSON error instead of crashing the function', async () => {
+  for (const invalidPassword of ['', 'short']) {
+    const instance = await startInstance('mongodb://127.0.0.1:27017/unused', {
+      ADMIN_PASSWORD: invalidPassword,
+    });
+    try {
+      const response = await fetch(`${instance.url}/api/index?__route=/api/health`, {
+        signal: AbortSignal.timeout(5000),
+      });
+      assert.equal(response.status, 503);
+      assert.equal(response.headers.get('cache-control'), 'no-store');
+      assert.match((await response.json()).error, /ADMIN_PASSWORD.*12–200/);
+    } finally {
+      instance.child.kill();
+      await instance.exited;
+    }
+  }
+});
 
 test(
   'Vercel handler shares sessions, content, uploads and login limits across instances',

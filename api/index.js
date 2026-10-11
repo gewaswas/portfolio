@@ -1,6 +1,6 @@
-import app from '../server/app.js';
+let appPromise;
 
-export default function handler(req, res) {
+export default async function handler(req, res) {
   // Reconstruct Express's path explicitly when Vercel rewrites to this function.
   const url = new URL(req.url, 'http://localhost');
   const route = req.query?.__route ?? url.searchParams.get('__route');
@@ -19,5 +19,22 @@ export default function handler(req, res) {
     const query = url.searchParams.toString();
     req.url = `${route}${query ? `?${query}` : ''}`;
   }
-  return app(req, res);
+  try {
+    appPromise ??= import('../server/app.js');
+    const { default: app } = await appPromise;
+    return app(req, res);
+  } catch (error) {
+    console.error(`API startup failed (${error.code || error.name}).`);
+    res.statusCode = 503;
+    res.setHeader('Content-Type', 'application/json');
+    res.setHeader('Cache-Control', 'no-store');
+    res.end(
+      JSON.stringify({
+        error:
+          error.code === 'ADMIN_PASSWORD_INVALID'
+            ? 'Set ADMIN_PASSWORD to a private password of 12–200 characters in Vercel and redeploy.'
+            : 'The API could not start. Check the Vercel function logs and deployment configuration.',
+      }),
+    );
+  }
 }
