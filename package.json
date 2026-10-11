@@ -3,12 +3,17 @@
   "version": "1.0.0",
   "description": "",
   "private": true,
+  "engines": {
+    "node": "24.x"
+  },
   "scripts": {
     "dev": "concurrently -k -n db,api,web \"node scripts/mongo.js\" \"node --watch server/index.js\" \"vite --host 127.0.0.1\"",
     "dev:external-db": "concurrently -k -n api,web \"node --watch server/index.js\" \"vite --host 127.0.0.1\"",
     "db": "node scripts/mongo.js",
     "db:check": "node scripts/check-db.js",
     "db:migrate-local": "node scripts/migrate-local.js",
+    "db:migrate-uploads": "node scripts/migrate-uploads.js",
+    "test:vercel": "node --test checks/vercel.test.js",
     "build": "vite build",
     "start": "node server/index.js",
     "setup": "node scripts/setup.js",

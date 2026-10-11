@@ -4,7 +4,7 @@ An editable portfolio built with **MongoDB, Express, React, and Node.js**. The p
 
 ## Run locally
 
-Use Node.js 22.12+ (or a newer supported Node release).
+Use Node.js 24.x (the same version configured for Vercel).
 
 ```powershell
 npm install
@@ -41,7 +41,8 @@ The Instagram and GitHub profile links and project Live/Source links appear afte
 - `src/Admin.jsx`: password-protected editor and draft preview.
 - `src/styles.css`: responsive portfolio and editor styles.
 - `shared/content.js`: initial content and shared validation schema.
-- `server/index.js`: API, authentication, uploads, and production static serving.
+- `server/app.js`: API, authentication, uploads, and production static serving.
+- `server/index.js`: local server startup; `api/index.js` exports the Vercel handler.
 - `server/store.js`: MongoDB persistence and optional file development storage.
 - `scripts/mongo.js`: persistent local development MongoDB runner.
 
@@ -54,12 +55,15 @@ npm run check
 npm run build
 npm run db:check
 npm test
+npm run test:vercel
 ```
 
 Browser tests use headless Microsoft Edge on Windows. Change the Playwright `channel` to your installed browser on another platform. Tests check rendering, mobile navigation, reduced motion, login and request-origin guards, editor save/reload, uploads, invalid content, and revision conflicts. They start an isolated app on ports 5174 and 4100 using test-only file storage and credentials; they do not write to your Atlas database or use your real admin password. Test data, test uploads, and screenshots go in ignored `reference/`.
 
 ## Production
 
+For Vercel, follow [DEPLOYMENT.md](DEPLOYMENT.md). The frontend and API deploy together; Atlas stores content, uploads, sessions, and shared login limits. The Vercel upload limit is 4 MB. Copy existing local uploads with `npm run db:migrate-uploads` before deploying.
+
 Set `NODE_ENV=production`, `STORAGE_MODE=mongodb`, your production `MONGODB_URI`, a strong private `ADMIN_PASSWORD`, and `PUBLIC_ORIGIN` to the website’s exact HTTPS origin. Run `npm run build`, then `npm start`. Express serves the built React app and API together; place it behind an HTTPS reverse proxy. Use a managed MongoDB service or a properly operated MongoDB instance. Do not use the development runner for hosting.
 
-Session cookies are HTTP-only and expire after eight hours; restarting Express signs editors out. Login is rate-limited, writes require an allowed request origin and authenticated session, and uploads use file signatures and random filenames. Save `.env` privately and never commit it. Preserve the database and `uploads` across deployments.
+Session cookies are HTTP-only and expire after eight hours. MongoDB sessions and login limits persist across API instances; file-storage development sessions stay in memory. Writes require an allowed request origin and authenticated session, and uploads use file signatures and random filenames. Save `.env` privately and never commit it. With disk uploads, preserve the database and `uploads` across deployments; with MongoDB uploads, back up Atlas.

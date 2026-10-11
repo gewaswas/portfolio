@@ -3,6 +3,7 @@ import { mkdir, readFile, writeFile, rename } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { defaultContent, contentSchema } from '../shared/content.js';
 import { configureMongoDns, mongoUri } from './mongo-config.js';
+import { onVercel, uploadStorage } from './runtime.js';
 const filename = resolve(process.env.DATA_DIR || 'data', 'portfolio.json');
 const schema = new mongoose.Schema(
   { _id: String, content: mongoose.Schema.Types.Mixed, revision: Number },
@@ -12,17 +13,49 @@ const Portfolio = mongoose.model('Portfolio', schema);
 let fileQueue = Promise.resolve();
 let record;
 export const storageMode = process.env.STORAGE_MODE || 'mongodb';
-export async function initStore() {
+let initialization;
+export function initStore() {
+  initialization ??= initializeStore().catch((error) => {
+    initialization = undefined;
+    throw error;
+  });
+  return initialization;
+}
+async function initializeStore() {
+  if (
+    onVercel &&
+    (storageMode !== 'mongodb' || uploadStorage !== 'mongodb' || !process.env.MONGODB_URI)
+  ) {
+    throw new Error(
+      'Vercel requires MONGODB_URI, STORAGE_MODE=mongodb and UPLOAD_STORAGE=mongodb.',
+    );
+  }
+  if (
+    !['disk', 'mongodb'].includes(uploadStorage) ||
+    (uploadStorage === 'mongodb' && storageMode !== 'mongodb')
+  ) {
+    throw new Error(
+      'MongoDB uploads require MongoDB content storage. UPLOAD_STORAGE must be disk or mongodb.',
+    );
+  }
   if (storageMode === 'mongodb') {
     configureMongoDns();
     await mongoose.connect(mongoUri(), {
-      serverSelectionTimeoutMS: 60000,
+      serverSelectionTimeoutMS: onVercel ? 10000 : 60000,
+      maxPoolSize: 5,
+      bufferCommands: false,
     });
     await Portfolio.updateOne(
       { _id: 'portfolio' },
       { $setOnInsert: { content: defaultContent, revision: 1 } },
       { upsert: true },
     );
+    await mongoose.connection.db
+      .collection('admin_sessions')
+      .createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 });
+    await mongoose.connection.db
+      .collection('login_limits')
+      .createIndex({ resetTime: 1 }, { expireAfterSeconds: 0 });
   } else if (storageMode === 'file') {
     await mkdir(resolve(process.env.DATA_DIR || 'data'), { recursive: true });
     try {

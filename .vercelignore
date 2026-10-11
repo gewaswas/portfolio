@@ -1,0 +1,12 @@
+.git/
+.vscode/
+.env
+.env.*
+!.env.example
+data/
+uploads/
+reference/
+test-results/
+playwright-report/
+tests/
+checks/

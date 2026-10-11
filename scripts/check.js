@@ -16,7 +16,7 @@ function checkFile(filename) {
   if (result.status !== 0) process.exitCode = 1;
 }
 
-for (const directory of ['server', 'scripts', 'shared', 'src', 'tests']) {
+for (const directory of ['api', 'checks', 'server', 'scripts', 'shared', 'src', 'tests']) {
   await checkDirectory(directory);
 }
 checkFile('vite.config.js');

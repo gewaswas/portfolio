@@ -22,14 +22,15 @@ function Field({ label, value, onChange, multiline = false, ...props }) {
     </div>
   );
 }
-function AssetField({ label, value, onChange, pdf = false, assets, onError }) {
+function AssetField({ label, value, onChange, pdf = false, assets, onError, maxUploadBytes }) {
   const [uploading, setUploading] = useState(false);
   const input = useRef(null);
   const upload = async (event) => {
     const file = event.target.files?.[0];
     if (!file) return;
-    if (file.size > 8 * 1024 * 1024) {
-      onError('File must be under 8 MB.');
+    if (file.size > maxUploadBytes) {
+      onError(`File must be under ${maxUploadBytes / 1024 / 1024} MB.`);
+      event.target.value = '';
       return;
     }
     setUploading(true);
@@ -269,7 +270,11 @@ export function Admin() {
       event.target.value = '';
     }
   };
-  const assetProps = { assets, onError: fail };
+  const assetProps = {
+    assets,
+    onError: fail,
+    maxUploadBytes: session?.maxUploadBytes || 8 * 1024 * 1024,
+  };
   const rowActions = (key, index) => (
     <div className="row-actions">
       <button
