@@ -36,15 +36,15 @@ Ensure the deployment preparation changes are pushed to GitHub before importing 
 4. Use **main** as the production branch and leave **Root Directory** at the repository root.
 5. Verify these settings:
 
-| Setting          | Value           |
-| ---------------- | --------------- |
-| Framework Preset | Vite            |
-| Build Command    | `npm run build` |
-| Output Directory | `dist`          |
-| Install Command  | `npm ci`        |
-| Node.js Version  | `24.x`          |
+| Setting          | Value                  |
+| ---------------- | ---------------------- |
+| Framework Preset | Vite                   |
+| Build Command    | `npm run build`        |
+| Output Directory | `dist`                 |
+| Install Command  | `npm ci --include=dev` |
+| Node.js Version  | `24.x`                 |
 
-The build/output settings are included in `vercel.json`; Node.js is specified in `package.json`. Vercel automatically deploys `api/index.js` as the backend function. Do not set `npm start` as the build command.
+The install/build/output settings are included in `vercel.json`; Node.js is specified in `package.json`. The install command includes development dependencies so Vite is installed even with `NODE_ENV=production`. The repository's `.npmrc` also enables them for an existing dashboard override of `npm ci`. Vercel automatically deploys `api/index.js` as the backend function. Do not set `npm start` as the build command.
 
 See [Vite deployment settings](https://vercel.com/docs/frameworks/frontend/vite) and [supported Node.js versions](https://vercel.com/docs/functions/runtimes/node-js/node-js-versions).
 
