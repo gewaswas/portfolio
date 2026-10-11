@@ -5,6 +5,7 @@ import { once } from 'node:events';
 import { mkdir } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { MongoMemoryServer } from 'mongodb-memory-server';
+import mongoose from 'mongoose';
 
 const origin = 'https://portfolio-test.vercel.app';
 const password = 'isolated-vercel-test-password';
@@ -170,6 +171,30 @@ test(
             ).status,
             400,
           );
+        },
+      );
+      await t.test(
+        'existing photos stored in the legacy data field retain their URLs',
+        async () => {
+          const client = new mongoose.mongo.MongoClient(uri);
+          const filename = `${'a'.repeat(32)}.png`;
+          try {
+            await client.connect();
+            await client
+              .db('vercel_test')
+              .collection('uploads')
+              .insertOne({
+                _id: filename,
+                data: new mongoose.mongo.Binary(png),
+                contentType: 'image/png',
+              });
+          } finally {
+            await client.close();
+          }
+          const response = await call(second, `/uploads/${filename}`);
+          assert.equal(response.status, 200);
+          assert.equal(response.headers.get('content-type').split(';')[0], 'image/png');
+          assert.deepEqual(Buffer.from(await response.arrayBuffer()), png);
         },
       );
       await t.test('logout invalidates the session on all instances', async () => {

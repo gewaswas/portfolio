@@ -42,9 +42,19 @@ export async function serveMongoUpload(req, res) {
   if (!uploadPattern.test(name)) return res.status(404).end();
   const file = await mongoose.connection.db.collection('uploads').findOne({ _id: name });
   if (!file) return res.status(404).end();
+  // Earlier uploads used a Mongoose Buffer field named data; preserve their URLs.
+  const binary = file.bytes ?? file.data;
+  const bytes = Buffer.isBuffer(binary)
+    ? binary
+    : binary instanceof Uint8Array
+      ? Buffer.from(binary)
+      : typeof binary?.value === 'function'
+        ? Buffer.from(binary.value())
+        : null;
+  if (!bytes) return res.status(404).end();
   res.setHeader('Content-Type', mimeTypes[name.split('.').pop()]);
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
   if (name.endsWith('.pdf')) res.setHeader('Content-Disposition', 'attachment');
-  res.send(Buffer.from(file.bytes.value()));
+  res.send(bytes);
 }
