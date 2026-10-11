@@ -162,14 +162,15 @@ export function Admin() {
     return () => window.removeEventListener('beforeunload', warn);
   }, [dirty]);
   const update = (key, value) => {
-    setDraft((d) => ({ ...d, [key]: value }));
+    setDraft((d) => ({ ...d, [key]: typeof value === 'function' ? value(d[key]) : value }));
     setNotice('');
   };
-  const updateItem = (key, index, field, value) =>
-    update(
-      key,
-      draft[key].map((item, i) => (i === index ? { ...item, [field]: value } : item)),
+  const updateItem = (key, index, field, value) => {
+    const id = draft[key][index].id;
+    update(key, (items) =>
+      items.map((item) => (item.id === id ? { ...item, [field]: value } : item)),
     );
+  };
   const move = (key, index, direction) => {
     const next = [...draft[key]];
     [next[index], next[index + direction]] = [next[index + direction], next[index]];

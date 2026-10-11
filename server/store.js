@@ -2,7 +2,7 @@ import mongoose from 'mongoose';
 import { mkdir, readFile, writeFile, rename } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { defaultContent, contentSchema } from '../shared/content.js';
-import { configureMongoDns } from './mongo-config.js';
+import { configureMongoDns, mongoUri } from './mongo-config.js';
 const filename = resolve(process.env.DATA_DIR || 'data', 'portfolio.json');
 const schema = new mongoose.Schema(
   { _id: String, content: mongoose.Schema.Types.Mixed, revision: Number },
@@ -15,7 +15,7 @@ export const storageMode = process.env.STORAGE_MODE || 'mongodb';
 export async function initStore() {
   if (storageMode === 'mongodb') {
     configureMongoDns();
-    await mongoose.connect(process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/kbd_portfolio', {
+    await mongoose.connect(mongoUri(), {
       serverSelectionTimeoutMS: 60000,
     });
     await Portfolio.updateOne(
@@ -28,6 +28,9 @@ export async function initStore() {
     try {
       record = JSON.parse(await readFile(filename, 'utf8'));
       contentSchema.parse(record.content);
+      if (!Number.isSafeInteger(record.revision) || record.revision < 1) {
+        throw new Error('Stored portfolio revision must be a positive safe integer.');
+      }
     } catch (error) {
       if (error.code !== 'ENOENT') throw error;
       record = { content: defaultContent, revision: 1 };
@@ -35,6 +38,13 @@ export async function initStore() {
     }
     console.log('Local file storage enabled. Set STORAGE_MODE=mongodb to use MongoDB.');
   } else throw new Error('STORAGE_MODE must be file or mongodb');
+}
+export async function checkStore() {
+  if (storageMode === 'mongodb') {
+    if (mongoose.connection.readyState !== 1) throw new Error('MongoDB is disconnected.');
+    await mongoose.connection.db.admin().ping({ timeoutMS: 3000 });
+  }
+  return getContent();
 }
 async function persist(value) {
   await writeFile(`${filename}.tmp`, JSON.stringify(value, null, 2));

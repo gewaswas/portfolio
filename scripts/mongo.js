@@ -7,6 +7,12 @@ import { resolve } from 'node:path';
 if (process.env.STORAGE_MODE === 'file') {
   console.log('File storage selected; local MongoDB is not needed.');
   setInterval(() => {}, 2147483647);
+} else if (
+  process.env.MONGODB_URI &&
+  !/^mongodb:\/\/(?:127\.0\.0\.1|localhost)(?::|\/)/.test(process.env.MONGODB_URI)
+) {
+  console.log('External MongoDB selected; the local MongoDB runner is not needed.');
+  setInterval(() => {}, 2147483647);
 } else {
   const dbPath = resolve(process.env.MONGO_DATA_DIR || 'data/mongodb');
   await mkdir(dbPath, { recursive: true });

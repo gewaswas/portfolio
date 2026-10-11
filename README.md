@@ -16,7 +16,7 @@ npm run dev
 - Editor: http://127.0.0.1:5173/admin
 - Find your generated `ADMIN_PASSWORD` in `.env`. Change it there if you prefer another password of at least 12 characters, then restart the server.
 
-`npm run dev` starts a local MongoDB server on `127.0.0.1:27017`, Express on port 4000, and Vite on port 5173. The MongoDB runner uses a real `mongod` process with WiredTiger and saves data in `data/mongodb`; it preserves that folder on shutdown. It is a development convenience, not a production database service. Its first installation downloads a MongoDB binary.
+`npm run dev` starts Express on port 4000 and Vite on port 5173. With a local MongoDB URI, it also starts a local MongoDB server on `127.0.0.1:27017`; with Atlas or another external URI, it skips the local database process. The MongoDB runner uses a real `mongod` process with WiredTiger and saves data in `data/mongodb`; it preserves that folder on shutdown. It is a development convenience, not a production database service. Its first installation downloads a MongoDB binary.
 
 If MongoDB already runs locally, or you use Atlas, set `MONGODB_URI` in `.env` and run `npm run dev:external-db`. Keep `STORAGE_MODE=mongodb`.
 
@@ -52,6 +52,7 @@ Initial defaults only seed an empty database. After the first run, update conten
 ```powershell
 npm run check
 npm run build
+npm run db:check
 npm test
 ```
 

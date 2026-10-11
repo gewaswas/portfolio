@@ -8,7 +8,8 @@ import { readdir, mkdir, writeFile } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import { resolve, extname } from 'node:path';
 import { contentSchema } from '../shared/content.js';
-import { initStore, getContent, saveContent, storageMode } from './store.js';
+import { initStore, checkStore, getContent, saveContent, storageMode } from './store.js';
+import { mongoErrorMessage } from './mongo-config.js';
 const app = express();
 const production = process.env.NODE_ENV === 'production';
 const password = process.env.ADMIN_PASSWORD;
@@ -103,11 +104,20 @@ app.post('/api/auth/logout', auth, (req, res) => {
   const { maxAge, ...clearOptions } = cookieOptions;
   res.clearCookie(cookieName, clearOptions).json({ ok: true });
 });
-app.get('/api/health', (_req, res) => res.json({ ok: true, storage: storageMode }));
+app.get('/api/health', async (_req, res) => {
+  try {
+    await checkStore();
+    res.json({ ok: true, storage: storageMode });
+  } catch {
+    res
+      .status(503)
+      .json({ ok: false, storage: storageMode, error: 'Portfolio storage is unavailable.' });
+  }
+});
 app.get('/api/content', async (_req, res) => res.json(await getContent()));
 app.put('/api/content', auth, async (req, res) => {
   const parsed = contentSchema.safeParse(req.body?.content);
-  if (!parsed.success || !Number.isInteger(req.body?.revision) || req.body.revision < 1)
+  if (!parsed.success || !Number.isSafeInteger(req.body?.revision) || req.body.revision < 1)
     return res.status(400).json({ error: 'Content is invalid.', details: parsed.error?.issues });
   const record = await saveContent(parsed.data, req.body.revision);
   if (!record)
@@ -199,6 +209,10 @@ try {
     console.log(`Portfolio API ready at http://localhost:${process.env.PORT || 4000}`),
   );
 } catch (error) {
-  console.error(`Cannot connect to the database (${error.name}). Check your database settings.`);
+  console.error(
+    storageMode === 'mongodb'
+      ? mongoErrorMessage(error)
+      : `Cannot initialize file storage (${error.name}). Check your storage settings.`,
+  );
   process.exit(1);
 }

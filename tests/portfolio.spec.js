@@ -1,6 +1,56 @@
 import { test, expect } from '@playwright/test';
 import { testSettings } from './settings.js';
 const origin = { Origin: testSettings.baseURL };
+test('health verifies portfolio storage', async ({ request }) => {
+  const response = await request.get('/api/health');
+  expect(response.status()).toBe(200);
+  expect(await response.json()).toEqual({ ok: true, storage: 'file' });
+});
+
+test('project uploads preserve newer edits and follow reordered items', async ({ page }) => {
+  await page.goto('/admin');
+  await page.getByLabel('Admin password').fill(testSettings.adminPassword);
+  await page.getByRole('button', { name: /Sign in/ }).click();
+  await page.getByRole('button', { name: 'Projects', exact: true }).click();
+  let release;
+  const gate = new Promise((resolve) => {
+    release = resolve;
+  });
+  let uploaded;
+  const received = new Promise((resolve) => {
+    uploaded = resolve;
+  });
+  await page.route('**/api/uploads', async (route) => {
+    uploaded();
+    await gate;
+    await route.fulfill({ status: 201, json: { url: '/aws.png' } });
+  });
+  try {
+    const project = page
+      .locator('.editor-section')
+      .filter({ has: page.getByRole('heading', { name: 'Project 1', exact: true }) });
+    await project
+      .locator('input[type=file]')
+      .setInputFiles({ name: 'test.png', mimeType: 'image/png', buffer: Buffer.from('test') });
+    await received;
+    await project.getByLabel('Description', { exact: true }).fill('Newer project description');
+    await page.getByRole('button', { name: 'Move projects item 1 down' }).click();
+    release();
+    const moved = page
+      .locator('.editor-section')
+      .filter({ has: page.getByRole('heading', { name: 'Project 2', exact: true }) });
+    await expect(moved.getByLabel('Project logo', { exact: true })).toHaveValue('/aws.png');
+    await expect(moved.getByLabel('Description', { exact: true })).toHaveValue(
+      'Newer project description',
+    );
+    await expect(moved.getByLabel('Project name', { exact: true })).toHaveValue('PawFolio');
+    await expect(page.getByRole('button', { name: 'Save changes', exact: true })).toBeEnabled();
+  } finally {
+    release();
+    page.on('dialog', (dialog) => dialog.accept());
+  }
+});
+
 test('invalid portfolio JSON shows a recoverable error', async ({ page }) => {
   const errors = [];
   page.on('pageerror', (error) => errors.push(error.message));
