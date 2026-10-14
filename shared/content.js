@@ -90,7 +90,7 @@ export const defaultContent = {
   github: '',
   resume: '',
   projectsTitle: 'PROJECT’S',
-  skillsTitle: 'SKILLS',
+  skillsTitle: 'Skills & Technologies',
   softwareTitle: 'SOFTWARES KNOWN',
   contactTitle: 'CONTACTS',
   projects: [

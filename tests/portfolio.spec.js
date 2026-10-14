@@ -108,6 +108,58 @@ async function signIn(request) {
   expect(result.ok()).toBeTruthy();
 }
 
+test('skill cards can be edited, added, reordered, deleted, previewed, and saved', async ({
+  page,
+  request,
+}) => {
+  const original = await (await request.get('/api/content')).json();
+  await page.goto('/admin');
+  await page.getByLabel('Admin password').fill(testSettings.adminPassword);
+  await page.getByRole('button', { name: /Sign in/ }).click();
+  try {
+    await page.getByRole('button', { name: 'Skills', exact: true }).click();
+    await page.getByLabel('Skills section heading').fill('My technologies');
+    await page.getByLabel('Skill name', { exact: true }).first().fill('Edited Python');
+    await page.getByRole('button', { name: '+ Add skill' }).click();
+    await page.getByLabel('Skill name', { exact: true }).last().fill('Git');
+    await page.getByRole('button', { name: 'Move skills item 4 up' }).click();
+    await expect(page.getByLabel('Skill name', { exact: true }).nth(2)).toHaveValue('Git');
+    await page.locator('.editor-section').last().getByRole('button', { name: 'Delete' }).click();
+    await expect(page.getByLabel('Skill name', { exact: true })).toHaveCount(3);
+    await page.getByRole('button', { name: 'Preview', exact: true }).click();
+    const preview = page.getByRole('dialog', { name: 'Draft portfolio preview' });
+    await expect(preview.locator('#skills-heading')).toHaveText('My technologies');
+    await expect(preview.locator('.skill-card')).toHaveText(['Edited Python', 'C', 'Git']);
+    await page.getByRole('button', { name: 'Back to editor' }).click();
+    await page.getByRole('button', { name: 'Save changes', exact: true }).click();
+    await expect(page.getByRole('status')).toHaveText(
+      'Changes saved. Your portfolio is up to date.',
+    );
+    await page.reload();
+    await page.getByRole('button', { name: 'Skills', exact: true }).click();
+    await expect(page.getByLabel('Skills section heading')).toHaveValue('My technologies');
+    await expect(page.getByLabel('Skill name', { exact: true }).first()).toHaveValue(
+      'Edited Python',
+    );
+    await page.goto('/');
+    await expect(page.locator('#skills-heading')).toHaveText('My technologies');
+    await expect(page.locator('#skills .skill-card')).toHaveText(['Edited Python', 'C', 'Git']);
+    await expect(page.locator('#skills')).not.toContainText('%');
+  } finally {
+    await signIn(request);
+    const current = await (await request.get('/api/content')).json();
+    expect(
+      (
+        await request.put('/api/content', {
+          headers: origin,
+          data: { content: original.content, revision: current.revision },
+        })
+      ).ok(),
+    ).toBeTruthy();
+    page.on('dialog', (dialog) => dialog.accept());
+  }
+});
+
 test('edits made during a delayed save remain in the draft', async ({ page, request }) => {
   const original = await (await request.get('/api/content')).json();
   await page.goto('/admin');
@@ -194,7 +246,17 @@ test('public content and project interaction render without runtime errors', asy
   await page.keyboard.press('Escape');
   await expect(page.getByRole('dialog')).toHaveCount(0);
   await page.locator('#skills').scrollIntoViewIfNeeded();
-  await expect(page.getByRole('img', { name: 'Python: 75%' }).locator('span')).toHaveText('75%');
+  await expect(page.locator('#skills .skill-card')).toHaveText(['Python', 'C', 'Java']);
+  await expect(page.locator('#skills .skill-card').first()).toHaveCSS(
+    'color',
+    'rgb(255, 255, 255)',
+  );
+  await expect(page.locator('#skills .skill-card').first()).toHaveCSS(
+    'border-top-color',
+    'rgb(215, 215, 215)',
+  );
+  await expect(page.locator('#skills')).toHaveCSS('background-color', 'rgb(0, 0, 0)');
+  await expect(page.locator('#skills')).not.toContainText('%');
   await page.locator('#software').scrollIntoViewIfNeeded();
   await expect(page.getByRole('heading', { name: 'SOFTWARES KNOWN' })).toBeVisible();
   for (const id of ['about', 'projects', 'skills', 'software', 'contact']) {
@@ -229,14 +291,16 @@ test('mobile layout fits and navigation works', async ({ page }) => {
   await page.waitForTimeout(850);
   await page.screenshot({ path: 'reference/mobile.png', fullPage: true });
 });
-test('reduced motion displays final name, role, and percentages', async ({ page }) => {
+test('reduced motion displays final name, role, and static skill cards', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.goto('/');
   await expect(page.getByRole('heading', { name: 'KYLE BRYAN DAVID' })).toHaveText(
     'KYLE BRYAN DAVID',
   );
   await expect(page.locator('.typed-role')).toHaveText('Programming');
-  await expect(page.getByRole('img', { name: 'Python: 75%' }).locator('span')).toHaveText('75%');
+  await expect(page.locator('#skills .skill-card').first()).toHaveText('Python');
+  await expect(page.locator('#skills')).not.toContainText('%');
+  await expect(page.locator('#skills svg')).toHaveCount(0);
 });
 test('content writes and uploads require authentication and allowed origin', async ({
   request,

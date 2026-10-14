@@ -413,7 +413,7 @@ export function Admin() {
                 {
                   Profile: 'Your introduction, portraits, and about section.',
                   Projects: 'Show the work you’re proud of. Visitors can open each project.',
-                  Skills: 'Set the skills and percentages shown in your animated rings.',
+                  Skills: 'Edit the heading and skill cards. Add, remove, or reorder your skills.',
                   Software: 'Add your tools, workspace images, and animated icon images.',
                   Contact: 'Give visitors a way to reach you.',
                   Animation: 'Adjust the typewriter and progress animation to your taste.',
@@ -604,29 +604,11 @@ export function Admin() {
                     <h2>Skill {i + 1}</h2>
                     {rowActions('skills', i)}
                   </div>
-                  <div className="field-grid">
-                    <Field
-                      label="Skill name"
-                      value={s.name}
-                      onChange={(v) => updateItem('skills', i, 'name', v)}
-                    />
-                    <Field
-                      label="Subtitle"
-                      value={s.subtitle}
-                      onChange={(v) => updateItem('skills', i, 'subtitle', v)}
-                    />
-                  </div>
                   <Field
-                    label="Proficiency (%)"
-                    type="number"
-                    min="0"
-                    max="100"
-                    value={s.percent}
-                    onChange={(v) => updateItem('skills', i, 'percent', Number(v))}
+                    label="Skill name"
+                    value={s.name}
+                    onChange={(v) => updateItem('skills', i, 'name', v)}
                   />
-                  <div className="editor-progress">
-                    <span style={{ width: `${s.percent}%` }} />
-                  </div>
                 </section>
               ))}
               <button
@@ -755,7 +737,7 @@ export function Admin() {
                 <span>Enable animations</span>
               </label>
               <p className="field-hint">
-                Visitors who prefer reduced motion will see static text and percentages.
+                Visitors who prefer reduced motion will see static text and images.
               </p>
               <Field
                 label="Typing speed (milliseconds per character)"
@@ -767,19 +749,8 @@ export function Admin() {
                   update('animations', { ...draft.animations, typingSpeed: Number(v) })
                 }
               />
-              <Field
-                label="Skill ring duration (milliseconds)"
-                type="number"
-                min="300"
-                max="5000"
-                value={draft.animations.ringDuration}
-                onChange={(v) =>
-                  update('animations', { ...draft.animations, ringDuration: Number(v) })
-                }
-              />
               <p className="field-hint">
-                Lower typing values type faster. Longer ring durations animate more slowly. Software
-                images crossfade every 3.5 seconds.
+                Lower typing values type faster. Software images crossfade every 3.5 seconds.
               </p>
             </section>
           )}

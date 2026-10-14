@@ -323,62 +323,44 @@ h2 {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 .skills {
-  padding-block: 60px 115px;
+  padding: 20px 24px 100px;
+  min-height: 355px;
+  background: #000;
+}
+.skills-content {
+  max-width: 1000px;
+  margin-inline: auto;
+}
+.skills h2 {
+  color: #fff;
+  font-size: clamp(26px, 3vw, 36px);
+  font-weight: 700;
+  letter-spacing: 0;
+  text-align: center;
 }
 .skills-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 90px;
-  max-width: 850px;
-  margin: 65px auto 0;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 20px;
+  margin: 32px 0 0;
+  padding: 0;
+  list-style: none;
 }
-.skill {
-  text-align: center;
-}
-.skill-ring {
-  position: relative;
-  width: 160px;
-  aspect-ratio: 1;
-  margin: auto;
-  background: #020202;
-  border-radius: 50%;
-}
-.skill-ring svg {
-  width: 100%;
-  height: 100%;
-  overflow: visible;
-}
-.ring-track {
-  fill: none;
-  stroke: #050505;
-  stroke-width: 7;
-}
-.ring-progress {
-  fill: none;
-  stroke: #fff;
-  stroke-width: 7;
-  stroke-linecap: butt;
-}
-.skill-ring > span {
-  position: absolute;
-  inset: 0;
-  display: grid;
-  place-items: center;
-  font-size: 28px;
-  letter-spacing: 0.06em;
+.skill-card {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 72px;
+  padding: 16px 20px;
+  border: 1px solid #d7d7d7;
+  border-radius: 6px;
+  background: #000;
+  color: #fff;
+  font-size: 18px;
   font-weight: 600;
-}
-.skill p {
-  font-size: 13px;
-  letter-spacing: 0.14em;
-  margin-top: 22px;
-}
-.skill small {
-  display: block;
-  font-size: 11px;
-  line-height: 1.8;
-  letter-spacing: 0.13em;
-  color: #d2d2d2;
+  line-height: 1.5;
+  text-align: center;
+  overflow-wrap: anywhere;
 }
 .software {
   padding-block: 50px 130px;
@@ -1100,9 +1082,6 @@ h2 {
   .project-grid {
     gap: 25px;
   }
-  .skills-grid {
-    gap: 35px;
-  }
   .software-copy p {
     font-size: 12px;
   }
@@ -1247,26 +1226,16 @@ h2 {
     font-size: 11px;
   }
   .skills {
-    padding: 45px 0 80px;
+    padding: 32px 24px 64px;
   }
   .skills-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 12px;
-    margin-top: 45px;
+    margin-top: 28px;
   }
-  .skill-ring {
-    width: 100%;
-    max-width: 120px;
-  }
-  .skill-ring > span {
-    font-size: 21px;
-  }
-  .skill p {
-    font-size: 11px;
-    letter-spacing: 0.06em;
-  }
-  .skill small {
-    font-size: 9px;
-    letter-spacing: 0.03em;
+  .skill-card {
+    font-size: 16px;
+    padding: 16px 12px;
   }
   .software {
     padding: 35px 0 75px;

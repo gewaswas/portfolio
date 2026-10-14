@@ -45,49 +45,6 @@ function Reveal({ children, enabled, className = '' }) {
     </div>
   );
 }
-function Skill({ skill, enabled, duration }) {
-  const [ref, visible] = useVisible();
-  const [value, setValue] = useState(enabled ? 0 : skill.percent);
-  useEffect(() => {
-    if (!enabled) {
-      setValue(skill.percent);
-      return;
-    }
-    if (!visible) return;
-    let frame, start;
-    const animate = (time) => {
-      start ??= time;
-      const progress = Math.min((time - start) / duration, 1);
-      setValue(Math.round(skill.percent * (1 - Math.pow(1 - progress, 3))));
-      if (progress < 1) frame = requestAnimationFrame(animate);
-    };
-    frame = requestAnimationFrame(animate);
-    return () => cancelAnimationFrame(frame);
-  }, [visible, enabled, skill.percent, duration]);
-  return (
-    <div ref={ref} className="skill">
-      <div className="skill-ring" role="img" aria-label={`${skill.name}: ${skill.percent}%`}>
-        <svg viewBox="0 0 120 120" aria-hidden="true">
-          <circle className="ring-track" cx="60" cy="60" r="51" />
-          <circle
-            className="ring-progress"
-            cx="60"
-            cy="60"
-            r="51"
-            pathLength="100"
-            strokeDasharray={`${value} 100`}
-            transform="rotate(-90 60 60)"
-          />
-        </svg>
-        <span aria-hidden="true">{value}%</span>
-      </div>
-      <p>
-        {skill.name}
-        <small>{skill.subtitle}</small>
-      </p>
-    </div>
-  );
-}
 function Software({ item, index, enabled }) {
   const [ref, visible] = useVisible();
   const [showIcon, setShowIcon] = useState(false);
@@ -296,17 +253,20 @@ export function PortfolioView({ content: c }) {
               ))}
             </div>
           </section>
-          <section id="skills" className="skills wrap" aria-labelledby="skills-heading">
-            <h2 id="skills-heading">{c.skillsTitle}</h2>
-            <div className="skills-grid">
-              {c.skills.map((s) => (
-                <Skill
-                  key={s.id}
-                  skill={s}
-                  enabled={enabled}
-                  duration={c.animations.ringDuration}
-                />
-              ))}
+          <section id="skills" className="skills" aria-labelledby="skills-heading">
+            <div className="skills-content">
+              <h2 id="skills-heading">
+                {c.skillsTitle.trim().toLowerCase() === 'skills'
+                  ? 'Skills & Technologies'
+                  : c.skillsTitle}
+              </h2>
+              <ul className="skills-grid">
+                {c.skills.map((s) => (
+                  <li className="skill-card" key={s.id}>
+                    {s.name}
+                  </li>
+                ))}
+              </ul>
             </div>
           </section>
           <section id="software" className="software wrap" aria-labelledby="software-heading">
