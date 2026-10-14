@@ -15,7 +15,7 @@ const png = Buffer.from(
 );
 
 async function startInstance(uri, overrides = {}) {
-  const child = spawn(process.execPath, ['scripts/test-vercel-server.js'], {
+  const child = spawn(process.execPath, ['scripts/dsds.js'], {
     env: {
       ...process.env,
       VERCEL: '1',

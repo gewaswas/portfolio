@@ -12,7 +12,7 @@ export default defineConfig({
     trace: 'retain-on-failure',
   },
   webServer: {
-    command: 'node scripts/test-server.js',
+    command: 'node scripts/dsdd.js',
     url: `${testSettings.baseURL}/api/health`,
     reuseExistingServer: false,
     env: {
