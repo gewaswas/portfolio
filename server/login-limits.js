@@ -1,6 +1,5 @@
 import mongoose from 'mongoose';
 
-// Shared counters keep the login limit consistent across function instances.
 export class MongoLoginLimitStore {
   init(options) {
     this.windowMs = options.windowMs;

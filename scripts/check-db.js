@@ -9,7 +9,6 @@ function configurationError(message) {
   return error;
 }
 
-// Driver server selection timeouts do not bound the initial Atlas DNS lookup.
 const deadline = setTimeout(() => {
   console.error(
     'MongoDB check timed out after 20 seconds. Check DNS resolvers, network access, and the Atlas IP access list.',

@@ -2,8 +2,6 @@ import 'dotenv/config';
 import { MongoMemoryServer } from 'mongodb-memory-server';
 import { mkdir } from 'node:fs/promises';
 import { resolve } from 'node:path';
-// Despite the package name, wiredTiger + an explicit dbPath persist edits on disk.
-// This runner is for local development; production uses a managed MongoDB service.
 if (process.env.STORAGE_MODE === 'file') {
   console.log('File storage selected; local MongoDB is not needed.');
   setInterval(() => {}, 2147483647);

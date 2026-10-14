@@ -594,7 +594,7 @@ h2 {
 .loading-brand {
   animation: blink 1.2s infinite;
 }
-/* The editor is a separate, password-protected application view. */
+
 .admin,
 .admin-login {
   font-family: 'Poppins', Arial, sans-serif;

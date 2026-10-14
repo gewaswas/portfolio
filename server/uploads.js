@@ -42,7 +42,6 @@ export async function serveMongoUpload(req, res) {
   if (!uploadPattern.test(name)) return res.status(404).end();
   const file = await mongoose.connection.db.collection('uploads').findOne({ _id: name });
   if (!file) return res.status(404).end();
-  // Earlier uploads used a Mongoose Buffer field named data; preserve their URLs.
   const binary = file.bytes ?? file.data;
   const bytes = Buffer.isBuffer(binary)
     ? binary

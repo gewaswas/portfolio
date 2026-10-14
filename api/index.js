@@ -1,7 +1,6 @@
 let appPromise;
 
 export default async function handler(req, res) {
-  // Reconstruct Express's path explicitly when Vercel rewrites to this function.
   const url = new URL(req.url, 'http://localhost');
   const route = req.query?.__route ?? url.searchParams.get('__route');
   if (route !== undefined && route !== null) {

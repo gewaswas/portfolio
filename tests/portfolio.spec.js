@@ -385,7 +385,6 @@ test('editor saves and reloads persisted content, previews drafts, and uploads i
         })
       ).ok(),
     ).toBeTruthy();
-    // Restore before leaving the editor, so test drafts do not trigger a leave warning.
     page.on('dialog', (dialog) => dialog.accept());
   }
 });

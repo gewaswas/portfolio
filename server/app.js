@@ -52,7 +52,6 @@ app.use(
   }),
 );
 app.use(express.json({ limit: '1mb' }));
-// Cache initialization per warm function instance; failures can be retried.
 app.use(['/api', '/uploads'], async (_req, res, next) => {
   try {
     await initStore();
@@ -70,7 +69,6 @@ app.use('/api', (req, res, next) => {
     const origin = req.get('origin');
     const allowed = new Set([process.env.PUBLIC_ORIGIN]);
     if (onVercel) {
-      // These hostnames are supplied by Vercel, not by request headers.
       for (const hostname of [
         process.env.VERCEL_URL,
         process.env.VERCEL_PROJECT_PRODUCTION_URL,

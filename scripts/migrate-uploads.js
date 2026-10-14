@@ -5,7 +5,6 @@ import { resolve } from 'node:path';
 import { configureMongoDns, mongoUri, mongoErrorMessage } from '../server/mongo-config.js';
 import { detectUpload, uploadPattern, uploadDirectory } from '../server/uploads.js';
 
-// Preserve the existing /uploads URLs; never replace a cloud file or delete a local file.
 const deadline = setTimeout(() => {
   console.error(
     'Upload migration timed out. Local files were preserved; rerunning safely resumes.',
